@@ -1,0 +1,579 @@
+---
+title: "Capstone Project"
+author: "Gideon Ugboma"
+date: "10/28/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## **Case Study: Cyclistic Bike-Share Analysis**
+
+How does a bike-share company navigate speedy success?
+
+The goal is to follow the steps of the data analysis process: ask, prepare, process, analyze, share, and act to answer the key business question: How do annual members and casual riders use Cyclistic bikes differently?
+
+### **BACKGROUND**
+
+**THE COMPANY**: Cyclistic, a fictional bike-share company based in Chicago, with a  fleet of 5,824 bicycles that are geotracked and locked into a network of 692 stations across Chicago.
+Customers who purchase single-ride or full-day passes are referred to as casual riders. Customers who purchase annual memberships are Cyclistic members.
+Annual members are more profitable. Design marketing strategies aimed at converting casual riders into annual members. 
+
+MY ROLE: A Junior data analyst working in the marketing analyst team.
+
+### STAKEHOLDERS 
+*	The director of marketing and my manager
+*	Cyclistic marketing analytics team
+*	Cyclistic executive team
+
+## **ASK**
+
+Business Task: Design marketing strategies aimed at converting casual riders into annual members.
+The assignment is to find out: How do annual members and casual riders use Cyclistic bikes differently? And produce a report with the following deliverables:
+1. A clear statement of the business task
+2. A description of all data sources used
+3. Documentation of any cleaning or manipulation of data
+4. A summary of your analysis
+5. Supporting visualizations and key findings
+6. Your top three recommendations based on your analysis
+
+## **PREPARE**
+
+Download the previous 12 months of Cyclistic trip historical data (from April, 2020 – March, 2021) from here [link](https://divvy-tripdata.s3.amazonaws.com/index.html).
+
+Data consists of 12 separate cvs files with 13 variable.
+The datasets have a different name because Cyclistic is a fictional company. The data has been made available by Motivate International Inc. You can find the license here [link](https://www.divvybikes.com/data-license-agreement) and the data is public.
+Does your data ROCCC? : The data meets the ROCCC critaria.
+*	Reliable - yes, not biased, 
+*	Original - yes, the original data is in the public domain
+*	Comprehensive - yes, not missing important information
+*	Current - yes, it is updated monthly
+*	Cited – yes
+
+## **PROCESS**
+
+
+
+### Setting up my environment
+ Setting up my environment by installing and loading packages
+ 
+ 
+```{r}
+list.files(path = "./Bike-share Project/")
+```
+ 
+
+```{r installing packages}
+library(skimr)
+library(tidyverse)
+library(janitor)
+library(lubridate)
+library(ggplot2)
+library(scales)
+```
+
+### Data Source Click Here [link](https://divvy-tripdata.s3.amazonaws.com/index.html)
+
+```{r importing data}
+apr_20 <- read.csv("./Bike-share Project/trip_data/202004-divvy-tripdata.csv")
+may_20 <- read.csv("./Bike-share Project/trip_data/202005-divvy-tripdata.csv")
+jun_20 <- read.csv("./Bike-share Project/trip_data/202006-divvy-tripdata.csv")
+jul_20 <- read.csv("./Bike-share Project/trip_data/202007-divvy-tripdata.csv")
+aug_20 <- read.csv("./Bike-share Project/trip_data/202008-divvy-tripdata.csv")
+sep_20 <- read.csv("./Bike-share Project/trip_data/202009-divvy-tripdata.csv")
+oct_20 <- read.csv("./Bike-share Project/trip_data/202010-divvy-tripdata.csv")
+nov_20 <- read.csv("./Bike-share Project/trip_data/202011-divvy-tripdata.csv")
+dec_20 <- read.csv("./Bike-share Project/trip_data/202012-divvy-tripdata.csv")
+jan_21 <- read.csv("./Bike-share Project/trip_data/202101-divvy-tripdata.csv")
+feb_21 <- read.csv("./Bike-share Project/trip_data/202102-divvy-tripdata.csv")
+mar_21 <- read.csv("./Bike-share Project/trip_data/202103-divvy-tripdata.csv")
+```
+
+
+### Combine all Datasets into one
+Here all individual datasets was merged into one
+
+```{r merge all 12 datasets}
+all_rides <- rbind(apr_20,may_20,jun_20,jul_20,aug_20,sep_20,oct_20,nov_20,dec_20,jan_21,feb_21,mar_21)
+```
+
+### Clean data to remove all empty cells and filter out all empty start station name
+
+```{r}
+all_rides <- janitor::remove_empty(all_rides,which = c("cols"))
+all_rides <- janitor::remove_empty(all_rides,which = c("rows"))
+all_rides <- all_rides %>% filter(start_station_name !="")
+```
+
+
+### Check Data Structure
+Checking data structures to make sure the data formatted correctly
+
+```{r str}
+str(apr_20)
+str(may_20)
+str(jun_20)
+str(jul_20)
+str(aug_20)
+str(sep_20)
+str(oct_20)
+str(sep_20)
+str(oct_20)
+str(nov_20)
+str(dec_20)
+str(jan_21)
+str(feb_21)
+str(mar_21)
+```
+
+### Covert Date/Time from character to Date/Time
+Here I converted the date/time stamp from character to correct format 
+Add columns that list the year, month, day of each ride
+
+```{r}
+all_rides$date <- as.Date(all_rides$started_at)
+all_rides$started_at <- lubridate::ymd_hms(all_rides$started_at)
+all_rides$ended_at <- lubridate::ymd_hms(all_rides$ended_at)
+all_rides$start_hour <- lubridate::hour(all_rides$started_at)
+all_rides$end_hour <- lubridate::hour(all_rides$ended_at)
+
+all_rides$month <- format(as.Date(all_rides$date), "%B")
+all_rides$day <- format(as.Date(all_rides$date), "%d")
+all_rides$year <- format(as.Date(all_rides$date), "%y")
+all_rides$day_of_week <- format(as.Date(all_rides$date), "%a")
+```
+
+
+### Calculating ride length and creating new columns
+
+
+```{r}
+all_rides$ride_length <- difftime(all_rides$ended_at,all_rides$started_at, units = "mins")
+all_rides$Hours <- difftime(all_rides$ended_at,all_rides$started_at,units = c("hours"))
+all_rides$Minutes <- difftime(all_rides$ended_at,all_rides$started_at,units = c("mins"))
+
+```
+
+
+
+```{r}
+str(all_rides)
+
+```
+
+
+### Convert ride_length to numeric from factor
+
+
+```{r}
+is.factor(all_rides$ride_length)
+all_rides$ride_length <- as.numeric(as.character(all_rides$ride_length))
+is.numeric(all_rides$ride_length)
+
+```
+
+### Remove trips where the ride length is <= 0 or more than one day (24 * 60 = 1440 min)
+
+```{r}
+all_rides2 <- all_rides[!(all_rides$ride_length > 1440 | all_rides$ride_length <= 0),]
+```
+
+
+```{r}
+str(all_rides2)
+
+```
+
+
+```{r}
+View(all_rides)
+```
+
+
+```{r}
+View(all_rides2)
+```
+
+
+### Type of membership
+Here I determine the number of each membership types
+ 
+```{r}
+table(all_rides$member_casual)
+
+```
+
+### Combine start and end stations
+
+```{r}
+all_stations <- rbind(data.frame("stations" = all_rides2$start_station_name, 
+                                     "member_casual" = all_rides2$member_casual),
+                          data.frame("stations" = all_rides2$end_station_name,
+                                     "member_casual" = all_rides2$member_casual))
+
+```
+### Removing entries with no station name
+
+```{r}
+all_stations2 <- all_stations[!(all_stations$stations == "" | is.na(all_stations$stations)),]
+```
+
+
+### Separate the data frame by rider type 
+
+```{r}
+all_stations_member <- all_stations2[all_stations2$member_casual == 'member',]
+all_stations_casual <- all_stations2[all_stations2$member_casual == 'casual',]
+```
+
+## **ANALYZE**
+Station analysis
+
+### Top 10 popular stations all, members, and casual riders
+
+```{r}
+top_10_stations <- all_stations2 %>%
+  group_by(stations) %>% 
+  summarise(station_count = n()) %>% 
+  arrange(desc(station_count)) %>% 
+  slice(1:10)
+
+top_10_station_member <- all_stations_member %>% 
+  group_by(stations) %>% 
+  summarise(station_count = n()) %>% 
+  arrange(desc(station_count)) %>% 
+  head(n=10)
+
+top_10_station_casual <- all_stations_casual %>% 
+  group_by(stations) %>% 
+  summarise(station_count = n()) %>% 
+  arrange(desc(station_count)) %>% 
+  head(n=10)
+```
+
+### Top 20 start stations for casual riders
+
+```{r}
+all_rides2 %>% 
+  group_by(start_station_name, member_casual) %>% 
+  summarize(number_of_rides = n(), .groups = 'drop') %>% 
+  filter(start_station_name != "", member_casual != "member") %>% 
+  arrange(-number_of_rides) %>% 
+  head(n=20)
+```
+
+
+### Ride Length Analysis
+
+
+```{r}
+all_rides2 %>% group_by(member_casual) %>% 
+  summarise(min_ride_length = min(ride_length), 
+            max_ride_length = max(ride_length),
+            mean_ride_length = mean(ride_length),
+            median_ride_length = median(ride_length),
+            mode_ride_length = mode(ride_length),
+            count = n()
+            ) %>% ungroup()
+```
+
+
+```{r}
+summary(all_rides2$ride_length)
+
+```
+
+
+```{r}
+all_rides2 %>% 
+  summarise(min_ride_length = min(ride_length), 
+            max_ride_length = max(ride_length),
+            mean_ride_length = mean(ride_length),
+            median_ride_length = median(ride_length),
+            count = n())
+
+```
+
+
+
+### Compare the ride length between members and casual riders
+
+```{r}
+aggregate(all_rides2$ride_length ~ all_rides2$member_casual, FUN = mean)
+aggregate(all_rides2$ride_length ~ all_rides2$member_casual, FUN = median)
+aggregate(all_rides2$ride_length ~ all_rides2$member_casual, FUN = max)
+aggregate(all_rides2$ride_length ~ all_rides2$member_casual, FUN = min)
+
+```
+
+
+### Average ride length by each day of the week for members vs. casual riders
+
+
+```{r}
+
+aggregate(all_rides2$ride_length ~ all_rides2$member_casual + all_rides2$day_of_week, FUN = mean)
+
+```
+
+
+
+### Arrange days of the week in order
+
+```{r}
+all_rides2$day_of_week <- ordered(all_rides2$day_of_week, 
+                                  levels = c("Mon", "Tue", "Wed",
+                                               "Thu", "Fri", "Sat", "Sun"))
+
+aggregate(all_rides2$ride_length ~ all_rides2$member_casual + all_rides2$day_of_week, FUN = mean)
+
+```
+
+
+### Median ride length between members and casual riders for each day of week
+
+```{r}
+aggregate(all_rides2$ride_length ~ all_rides2$member_casual + all_rides2$day_of_week, FUN = median)
+```
+
+### Number of rides between members and casual riders for each day of week
+
+```{r}
+all_rides2 %>% 
+  group_by(member_casual, day_of_week) %>% 
+  summarise(number_of_rides = n(), .groups = 'drop') %>% 
+  arrange(day_of_week)
+```
+### Arrange months in order
+
+```{r}
+all_rides2$month <- ordered(all_rides2$month, 
+                              levels = c("January", "February", "March",
+                                         "April", "May", "June",
+                                         "July", "August", "September",
+                                         "Octobor", "November", "December"))
+```
+
+
+### Calculate the average ride length by month for members vs. casual riders
+
+```{r}
+aggregate(all_rides2$ride_length ~ all_rides2$member_casual + all_rides2$month, FUN = mean)
+```
+
+
+### Number of rides between members and casual riders for each month
+
+```{r}
+all_rides2 %>% 
+  group_by(member_casual, month) %>% 
+  summarise(number_of_rides = n()) %>% 
+  arrange(month) %>% ungroup()
+```
+
+
+### Compare bike type preference between casual riders and members
+ 
+```{r}
+all_rides2 %>% 
+  group_by(rideable_type, member_casual) %>% 
+  summarize(number_of_rides = n()) %>% ungroup()
+```
+
+
+### Number of docked_bike rides by casual riders and members for each day of week
+ 
+```{r}
+all_rides2 %>% 
+  filter(rideable_type == 'docked_bike') %>% 
+  group_by(member_casual, day_of_week) %>% 
+  summarise(number_of_rides = n()) %>% 
+  arrange(day_of_week) %>% ungroup()
+```
+ 
+## Docked_bike rides by casual riders for each day of week
+
+```{r}
+all_rides2 %>% 
+  filter(rideable_type == 'docked_bike', member_casual == 'casual') %>% 
+  group_by(day_of_week) %>% 
+  summarise(number_of_rides = n()) %>% ungroup()
+```
+
+
+
+```{r}
+all_rides3 <- all_rides2 %>% group_by(weekly = floor_date(date,"week"),start_hour) %>% 
+  summarise(
+    Minutes = sum(Minutes),
+    Mean = mean(Minutes),
+    Median = median(Minutes),
+    Max = max(Minutes),
+    Min = min(Minutes),
+    Count = n()
+  ) %>% ungroup()
+```
+
+
+```{r}
+bikestype <- all_rides2 %>% group_by(rideable_type,weekly = floor_date(date,"week")) %>% 
+  summarise(
+    Minutes = sum(Minutes),
+    Mean = mean(Minutes),
+    Median = median(Minutes),
+    Max = max(Minutes),
+    Min = min(Minutes),
+    Count = n()
+  ) %>% ungroup()
+```
+
+
+### Count by Bike Type(Total by Week)
+
+```{r}
+table(bikestype$rideable_type)
+
+```
+
+
+```{r}
+xtabs(all_rides3$Count ~all_rides3$start_hour)
+```
+
+
+```{r}
+View(all_rides3)
+```
+
+### Summary of Hourly Counts
+
+```{r}
+summary(all_rides3$Count)
+```
+
+
+
+
+```{r}
+all_rides3$monthly <- lubridate::month(all_rides3$weekly)
+```
+
+
+```{r}
+all_rides3$CountMA <- forecast::ma(all_rides3$Count,28)
+```
+
+## **SHARE**
+
+### Creating Data Visualizations
+
+
+```{r}
+all_rides2 %>% count(start_station_name,sort = TRUE) %>% top_n(20) %>% ggplot() + 
+  geom_col(aes(x=reorder(start_station_name,n),y=n,fill="peru")) + coord_flip() + scale_alpha_continuous(labels = comma) + labs(title = "Top 20 Start Station by Ride Count",
+ X = "Count of Rides",y = "Station Name")                
+```
+
+### Top 10 Stations by Casual Riders
+
+```{r}
+ggplot(data = top_10_station_casual) +
+  geom_col(aes(x = reorder(stations, station_count), y = station_count), fill = "purple") +
+  labs(title = "Top 10 Stations by Casual Riders", x = "", y = "Number of Rides") + 
+  scale_y_continuous(labels = scales::comma) +
+  coord_flip()
+```
+
+### Top 10 Stations Used by Members
+
+```{r}
+ggplot(data = top_10_station_member) +
+  geom_col(aes(x = reorder(stations, station_count), y = station_count,fill = "peru")) +
+  labs(title = "Top 10 Stations Used by Members", y = "Number of Rides", x = "") +
+  scale_y_continuous(labels = scales::comma) +
+  coord_flip() +
+  theme_minimal() 
+```
+
+### Bike Use by Casual Riders vs. Members for each Day of Week across the Year
+
+```{r}
+all_rides2 %>% 
+  group_by(month, day_of_week, member_casual) %>% 
+  summarize(number_of_rides = n(), .groups = 'drop') %>% 
+  drop_na() %>% 
+  ggplot(aes(x = day_of_week, y = number_of_rides, fill = member_casual)) +
+  geom_col(position = "dodge") +
+  scale_y_continuous(labels = scales::comma) +
+  facet_grid(member_casual~month) +
+  labs(x = "Day of Week", y = "Number of Rides", fill = "Member/Casual",
+       title = "Bike Use by Casual Riders vs. Members for each Day of Week across the Year", fill = 'Member/Casual') + theme(axis.text.x = element_text(angle = 90)) + theme()
+```
+
+### Count of ride per day
+
+```{r}
+all_rides3 %>% ggplot() + geom_col(aes(x = weekly,y = Count,fill="peru")) + scale_y_continuous(labels = comma) + 
+  labs(title="Count of ride per day",y="Average rides per day")
+```
+
+### Count of ride by Hour
+
+```{r}
+all_rides3 %>% ggplot() + geom_col(aes(x = start_hour,y = Minutes,fill="peru")) + scale_y_continuous(labels = comma) + 
+  labs(title="Count of ride by Hour",y="Rides per Hour")
+```
+
+
+### Count of ride by Bike Type
+
+```{r}
+ggplot(bikestype) + geom_area(aes(x=weekly,y=Count,fill=rideable_type)) + scale_y_continuous(labels=comma) + 
+  labs(title="Count of ride by Bike Type")
+  
+```
+
+### Total Ride Minutes by week
+
+```{r}
+ggplot(bikestype) + geom_col(aes(x = weekly,y = Minutes,fill = "peru")) + scale_y_continuous(labels = comma) +
+  facet_wrap(~rideable_type) + labs(title = "Total Ride Minutes by week")
+```
+
+### Count of rides by Rider Type
+
+```{r}
+ggplot(bikestype) + geom_col(aes(x=weekly,y=Count,fill=rideable_type)) +  scale_y_continuous(labels=comma) + 
+  labs(title="Count of rides by Rider Type")
+  
+```
+
+### Ride Minutes by Bike Types and Week
+
+```{r}
+ggplot(bikestype ,aes(x=weekly, y=Minutes,fill=rideable_type)) + geom_area(stat ="identity",position=position_dodge(),alpha = 0.75) +
+  scale_y_continuous(labels = comma) + labs(title="Ride Minutes by Bike Types and Week", y="Bike Trip in Minutes")
+```
+
+
+
+### **KEY FINDINGS**
+
+*	There are more casual riders on weekends than week days.
+*	During the summer months the number of casual riders steadily increase between the months of June to August
+*	Docked bikes are the most popular and classic bikes are the least popular
+*	Between 3 PM to 6 PM is the peak time with highest number of rides during the day
+*	The mean ride length of casual riders is two times longer than members
+*	The top 3 start stations for casual riders are 1. Streeter Dr. & Grand Ave. 2. Lake Shore Dr.& Monroe St. and 3.   
+  Millennium Park
+
+## **ACT**
+
+### Recommendations:
+*	Offer attractive discount on memberships during summer months and especially weekends to attract casual riders.
+*	Marketing campaigns targeting top stations used by casual riders may increase the rate of subscription.
+*	Form partnership with local businesses around the top 10 stations used by casual riders. 
+*	Carryout marketing campaigns on digital media, cycling apps, billboards and local businesses on key cycling routes.
+
